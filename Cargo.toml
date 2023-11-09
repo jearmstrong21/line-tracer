@@ -1,0 +1,12 @@
+[package]
+name = "line-tracer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gl33 = "0.2.1"
+glfw = "0.45.0"
+ultraviolet = "0.9.0"
+image = "0.24.3"

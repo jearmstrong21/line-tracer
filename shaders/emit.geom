@@ -1,13 +1,16 @@
 #version 330 core
 
+layout (std140) uniform;
 layout (points) in;
 layout (line_strip, max_vertices = 20) out;
 
-uniform vec2 screenSize;
-uniform int frameCount;
-uniform float systemTime;
+uniform vec2 screen_size;
+uniform int frame_count;
+uniform float system_time;
 
-uniform vec2 mouseCoords;
+uniform vec2 mouse_coords;
+
+uniform float bounce_diminish;
 
 #define PI 3.1415
 #define TWO_PI (2.0 * PI)
@@ -20,26 +23,42 @@ uniform vec2 mouseCoords;
 
 out vec3 color;
 
+
+#define H_SCENE_EPS 1E10
+HitRes hitScene(Ray r) {
+    HitRes hr;
+    hr.t = H_SCENE_EPS;
+
+    hitArcs(r, hr);
+    hitCircles(r, hr);
+    hitLines(r, hr);
+
+    hr.hit = hr.t < H_SCENE_EPS;
+    if (hr.hit) {
+        hr.n = normalize(hr.n);
+        if (dot(hr.n, r.d) > 0.0) {
+            hr.n *= -1.0;
+        }
+    }
+    return hr;
+}
+
 void point(vec2 p) {
-    gl_Position = vec4(
-    0.5 *
-    (p / screenSize * 2.0 - 1.0), 0, 1);
+    gl_Position = vec4((p / screen_size * 2.0 - 1.0), 0, 1);
     EmitVertex();
 }
 
 void main() {
     float spaced = gl_in[0].gl_Position.x;
-    Random rng = seed(uvec3(spaced * screenSize.x, 0, 0 * frameCount));
+    Random rng = seed(uvec3(spaced * screen_size.x, 0, 0 * frame_count));
     EdgeSample es = sampleLightsSpaced(rng, spaced);
 
     float wl = sampleWavelength(rng, spaced);
 
     color = spectral_zucconi6(wl) * 0.25;
-//    color = vec3(1);
 
-    Ray r = Ray(es.p
-//    / 1.5
-    , es.n);
+    Ray r = Ray(es.p, es.n);
+//    r.o += spaced * 100.0;
     point(r.o);
     bool inMedium = false;
     for (int i = 0; i < 40; i++) {
@@ -47,7 +66,6 @@ void main() {
         Ray nr;
         if (hr.hit) {
             point(r.o + r.d * hr.t);
-//            EndPrimitive();
             vec2 n;
             if (hr.m == M_DIFF) {
                 n = RAND_HEMI(hr.n);
@@ -72,11 +90,9 @@ void main() {
                 color = vec3(1, 0, 0);
             }
             r = Ray(hr.p, n);
-//            color *= 0.5;
+            color *= bounce_diminish;
         } else {
-//            point(r.o);
-            point(r.o + r.d * dot(screenSize, screenSize));
-//            EndPrimitive();
+            point(r.o + r.d * dot(screen_size, screen_size));
             break;
         }
     }

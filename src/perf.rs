@@ -6,7 +6,7 @@ use std::time::Instant;
 
 pub struct Perf {
     time: f32,
-    frames: f32,
+    pub frames: f32,
     start: Instant,
     pub(crate) text: String
 }

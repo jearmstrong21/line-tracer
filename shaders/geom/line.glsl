@@ -6,6 +6,13 @@ struct Line {
     int m;
 };
 
+#define MAX_LINE_COUNT 20
+uniform int line_count;
+
+uniform vec2 line_a[MAX_LINE_COUNT];
+uniform vec2 line_b[MAX_LINE_COUNT];
+uniform int line_m[MAX_LINE_COUNT];
+
 EdgeSample sampleLine(RAND_PARAM, Line l) {
     vec2 d = l.b - l.a;
     return EdgeSample(l.a + d * RAND_FLOAT, normalize(vec2(-d.y, d.x)) * RAND_SIGN);
@@ -40,5 +47,15 @@ void hitLine(Ray r, Line l, inout HitRes hr) {
         hr.m = l.m;
         //            hr.m = l.m;
         //            hr.inside = false;
+    }
+}
+
+void hitLines(Ray r, inout HitRes hr) {
+    for(int i = 0; i < line_count; i++) {
+        Line l;
+        l.a = line_a[i];
+        l.b = line_b[i];
+        l.m = line_m[i];
+        hitLine(r, l, hr);
     }
 }

@@ -3,10 +3,6 @@ struct Ray {
     vec2 d;
 };
 
-#define M_DIFF 1
-#define M_REFL 2
-#define M_REFR 3
-
 struct HitRes {
     bool hit;
     float t;

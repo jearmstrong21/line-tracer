@@ -2,3 +2,4 @@
 #include geom/circle
 #include geom/line
 #include geom/arc
+#include geom/material

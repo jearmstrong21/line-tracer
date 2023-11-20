@@ -6,6 +6,15 @@ struct Arc {
     int m;
 };
 
+#define MAX_ARC_COUNT 20
+uniform int arc_count;
+
+uniform vec2 arc_p[MAX_ARC_COUNT];
+uniform float arc_r[MAX_ARC_COUNT];
+uniform float arc_ta[MAX_ARC_COUNT];
+uniform float arc_tb[MAX_ARC_COUNT];
+uniform int arc_m[MAX_ARC_COUNT];
+
 float hitArc_helper(vec2 p, Arc s) {
     return atan(p.y - s.p.y, p.x - s.p.x) * 180.0 / PI;
 }
@@ -48,5 +57,17 @@ void hitArc(Ray r, Arc s, inout HitRes hr) {
             hr.n = (L + t * r.d) / s.r;
             hr.m = s.m;
         }
+    }
+}
+
+void hitArcs(Ray r, inout HitRes hr) {
+    for(int i = 0; i < arc_count; i++) {
+        Arc a;
+        a.p = arc_p[i];
+        a.r = arc_r[i];
+        a.ta = arc_ta[i];
+        a.tb = arc_tb[i];
+        a.m = arc_m[i];
+        hitArc(r, a, hr);
     }
 }

@@ -1,5 +1,7 @@
 #include geom/mod
 
+
+
 float sampleWavelength(RAND_PARAM, float t) {
 //        return RAND_FLOAT * 300.0 + 400.0;
     return t * 300.0 + 400.0;

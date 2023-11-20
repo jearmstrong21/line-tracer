@@ -12,6 +12,8 @@ void main() {
     if (c.x > 1.0 || c.y > 1.0 || c.z > 1.0) {
         c /= max(c.x,max(c.y,c.z));
     }
+//    fc=vec4(uv,0,1)*texture(tex,uv);
+//    fc=texture(tex,uv);
     fc=vec4(c,1.0);
 //    ivec2 p = ivec2(uv * screenSize);
 //    vec3 xmi = texelFetch(tex, ivec2(p.x - 1, p.y), 0).xyz;

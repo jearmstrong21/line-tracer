@@ -1,4 +1,5 @@
-use std::f32::consts::TAU;
+use std::cmp::{max, min};
+use std::f32::consts::{PI, TAU};
 use glium::{Display, implement_vertex, IndexBuffer};
 use glium::glutin::surface::WindowSurface;
 use glium::index::PrimitiveType;
@@ -106,12 +107,28 @@ impl SceneData {
         let mut vertices = vec![];
         let mut indices = vec![];
         let lod = 50;
+        let mut pv = |p: &[f32; 2], r: f32, a: f32| -> Vertex {
+            Vertex { position: [p[0] + r * a.cos(), p[1] + r * a.sin()]}
+        };
         for a in &self.arcs {
+            let ta = a.ta * 180.0 / PI;
+            let tb = a.tb * 180.0 / PI;
+            fn lerp_angle(mut ta: f32, mut tb: f32, l: f32) -> f32 {
+                if ta < tb {
+                    while ta < 0. {
+                        ta += 360.0;
+                        tb += 360.0;
+                    }
+                    (tb - ta) * l + ta
+                } else {
+                    0.0
+                }
+            }
             for i in 0..lod {
-                let ta = (i as f32 / lod as f32) * (a.tb - a.ta) + a.ta;
-                let tb = ta + (1.0 / lod as f32) * (a.tb - a.ta) + ta;
-                vertices.push(Vertex { position: [a.p[0] + a.r * ta.cos(), a.p[1] + a.r * ta.sin()]});
-                vertices.push(Vertex { position: [a.p[0] + a.r * tb.cos(), a.p[1] + a.r * tb.sin()]});
+                let ta = lerp_angle(ta, tb, i as f32 / lod as f32) * 180.0 / PI;
+                let tb = lerp_angle(ta, tb, (i as f32 + 1.0) / lod as f32) * 180.0 / PI;
+                vertices.push(pv(&a.p, a.r, ta));
+                vertices.push(pv(&a.p, a.r, tb));
                 indices.push(vertices.len() as u16 - 2);
                 indices.push(vertices.len() as u16 - 1);
             }
@@ -120,8 +137,8 @@ impl SceneData {
             for i in 0..lod {
                 let ta = (i as f32 / lod as f32) * TAU;
                 let tb = ta + (1.0 / lod as f32) * TAU;
-                vertices.push(Vertex { position: [c.p[0] + c.r * ta.cos(), c.p[1] + c.r * ta.sin()]});
-                vertices.push(Vertex { position: [c.p[0] + c.r * tb.cos(), c.p[1] + c.r * tb.sin()]});
+                vertices.push(pv(&c.p, c.r, ta));
+                vertices.push(pv(&c.p, c.r, tb));
                 indices.push(vertices.len() as u16 - 2);
                 indices.push(vertices.len() as u16 - 1);
             }

@@ -50,7 +50,7 @@ void point(vec2 p) {
 
 void main() {
     float spaced = gl_in[0].gl_Position.x;
-    Random rng = seed(uvec3(spaced * screen_size.x, 0, 0 * frame_count));
+    Random rng = seed(uvec3(spaced * screen_size.x, 0, 1 * frame_count));
     EdgeSample es = sampleLightsSpaced(rng, spaced);
 
     float wl = sampleWavelength(rng, spaced);

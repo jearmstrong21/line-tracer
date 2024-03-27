@@ -5,6 +5,8 @@ use glium::glutin::surface::WindowSurface;
 use glium::index::PrimitiveType;
 use glium::uniforms::{Uniforms, UniformValue};
 use glium::VertexBuffer;
+use rand::{Rng, thread_rng};
+use rand::distributions::Standard;
 
 pub const MATERIAL_DIFFUSE: i32 = 1;
 pub const MATERIAL_REFLECT: i32 = 2;
@@ -55,7 +57,9 @@ pub struct SceneData {
     pub system_time: f32,
 
     pub eta_a: f32,
-    pub eta_b: f32
+    pub eta_b: f32,
+    pub brightness_scale: f32,
+    pub ray_count: f32
 }
 
 fn flatten<T, S, F: Fn(&T) -> S>(arr: &[T], get: F) -> Vec<S> {
@@ -70,6 +74,7 @@ fn arr<'a, T, G: Fn(&T) -> UniformValue<'a>, F: FnMut(&str, UniformValue<'a>)>(n
 
 impl Uniforms for SceneData {
     fn visit_values<'a, F: FnMut(&str, UniformValue<'a>)>(&'a self, mut f: F) {
+        f("jitterGeom", UniformValue::Float(thread_rng().sample(Standard)));
         f("arc_count", UniformValue::SignedInt(self.arc_count));
         f("circle_count", UniformValue::SignedInt(self.circle_count));
         f("line_count", UniformValue::SignedInt(self.line_count));
@@ -99,6 +104,9 @@ impl Uniforms for SceneData {
 
         f("eta_a", UniformValue::Float(self.eta_a));
         f("eta_b", UniformValue::Float(self.eta_b));
+
+        f("brightness_scale", UniformValue::Float(self.brightness_scale));
+        f("ray_count", UniformValue::Float(self.ray_count));
     }
 }
 
@@ -111,8 +119,8 @@ impl SceneData {
             Vertex { position: [p[0] + r * a.cos(), p[1] + r * a.sin()]}
         };
         for a in &self.arcs {
-            let ta = a.ta * 180.0 / PI;
-            let tb = a.tb * 180.0 / PI;
+            let ta = a.tb * 180.0 / PI;
+            let tb = a.ta * 180.0 / PI;
             fn lerp_angle(mut ta: f32, mut tb: f32, l: f32) -> f32 {
                 if ta < tb {
                     while ta < 0. {

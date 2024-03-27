@@ -12,6 +12,9 @@ uniform vec2 mouse_coords;
 
 uniform float bounce_diminish;
 
+uniform float brightness_scale;
+uniform float ray_count;
+
 #define PI 3.1415
 #define TWO_PI (2.0 * PI)
 
@@ -48,14 +51,16 @@ void point(vec2 p) {
     EmitVertex();
 }
 
+uniform float jitterGeom;
+
 void main() {
-    float spaced = gl_in[0].gl_Position.x;
+    float spaced = gl_in[0].gl_Position.x + jitterGeom - 0.5;
     Random rng = seed(uvec3(spaced * screen_size.x, 0, 1 * frame_count));
     EdgeSample es = sampleLightsSpaced(rng, spaced);
 
     float wl = sampleWavelength(rng, spaced);
 
-    color = spectral_zucconi6(wl) * 0.25;
+    color = spectral_zucconi6(wl) * 0.25 * brightness_scale * 10000.0 / ray_count;
 
     Ray r = Ray(es.p, es.n);
 //    r.o += spaced * 100.0;
@@ -65,7 +70,6 @@ void main() {
         HitRes hr = hitScene(r);
         Ray nr;
         if (hr.hit) {
-            point(r.o + r.d * hr.t);
             vec2 n;
             if (hr.m == M_DIFF) {
                 n = RAND_HEMI(hr.n);
@@ -89,8 +93,10 @@ void main() {
             } else {
                 color = vec3(1, 0, 0);
             }
+            vec2 hitpos = r.o + r.d * hr.t;
             r = Ray(hr.p, n);
             color *= bounce_diminish;
+            point(hitpos);
         } else {
             point(r.o + r.d * dot(screen_size, screen_size));
             break;

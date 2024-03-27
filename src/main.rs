@@ -20,6 +20,17 @@ use geometry::*;
 const WIDTH: u32 = 2400;
 const HEIGHT: u32 = 1600;
 
+fn exp10(n: u32) -> u32 {
+    if n == 0 {
+        1
+    } else if n % 2 == 0 {
+        let x = exp10(n / 2);
+        x * x
+    } else {
+        10 * exp10(n - 1)
+    }
+}
+
 fn main() {
     let event_loop = EventLoopBuilder::new().build();
     let (window, display) = SimpleWindowBuilder::new()
@@ -32,8 +43,8 @@ fn main() {
     println!("{} {} {}", display.get_opengl_version_string(), display.get_opengl_vendor_string(), display.get_opengl_renderer_string());
 
     let main_shader = load_shader(&display, "emit", true);
-    let mut ray_count = 10000;
-    let main_vertex = emit_geom(&display, ray_count);
+    let mut ray_count = 4;
+    let mut main_vertex = emit_geom(&display, exp10(ray_count));
 
     let postprocess = load_shader(&display, "postprocess", false);
     let copy_shader = load_shader(&display, "copy", false);
@@ -62,8 +73,10 @@ fn main() {
 
     let mut perf = Perf::new();
 
+    let mut run_average = true;
+
     let mut mouse_engaged = true;
-    let mut draw_geom = true;
+    let mut draw_geom = false;
 
     let mut egui = egui_glium::EguiGlium::new(&display, &window, &event_loop);
 
@@ -83,6 +96,8 @@ fn main() {
         system_time: 0.0,
         eta_a: 0.9,
         eta_b: 0.4,
+        brightness_scale: 1.0,
+        ray_count: exp10(ray_count) as f32,
     };
 
     {
@@ -105,15 +120,36 @@ fn main() {
             scene_data.lines[scene_data.line_count as usize] = l;
             scene_data.line_count += 1;
         };
+        
+        scene_data.circles[0] = Circle {
+            p: [1200.0, 700.0],
+            r: 200.0,
+            m: MATERIAL_REFRACT,
+        };
+        scene_data.circles[1] = Circle {
+            p: [1650.0, 480.0],
+            r: 90.0,
+            m: MATERIAL_REFRACT
+        };
+        scene_data.circle_count = 2;
+        
+        scene_data.arcs[0] = Arc {
+            p: [1650.0, 550.0],
+            r: 200.0,
+            ta: -120.0,
+            tb: 120.0,
+            m: MATERIAL_REFLECT,
+        };
+        scene_data.arc_count = 1;
 
         al(line(0., 0., w, 0., MATERIAL_REFLECT)); // right
         al(line(w, 0., w, h, MATERIAL_REFLECT)); // bottom
         al(line(0., h, w, h, MATERIAL_REFLECT)); // top
-        // al(line(0.0, 0.0, 0.0, h, MATERIAL_REFLECT));
+        al(line(0.0, 0.0, 0.0, h, MATERIAL_REFLECT));
 
-        al(line(1600.0, 600.0, 2000.0, 600.0, MATERIAL_REFRACT));
-        al(line(1800.0, 1000.0, 2000.0, 600.0, MATERIAL_REFRACT));
-        al(line(1800.0, 1000.0, 1600.0, 600.0, MATERIAL_REFRACT));
+        // al(line(1600.0, 600.0, 2000.0, 600.0, MATERIAL_REFRACT));
+        // al(line(1800.0, 1000.0, 2000.0, 600.0, MATERIAL_REFRACT));
+        // al(line(1800.0, 1000.0, 1600.0, 600.0, MATERIAL_REFRACT));
     }
 
     let mut last_geom_changed = false;
@@ -186,7 +222,7 @@ fn main() {
                     &postprocess,
                     &uniform! {
                         screenSize: [WIDTH as f32, HEIGHT as f32],
-                        tex: &accum_texture
+                        tex: &accum_texture,
                     },
                     &Default::default()
         ).unwrap();
@@ -216,6 +252,16 @@ fn main() {
                 ui.label(RichText::new(if last_geom_changed { "Geometry changed" } else { "Geometry stable" })
                     .color(if last_geom_changed { Color32::RED } else { Color32::GREEN }));
                 ui.checkbox(&mut draw_geom, "Draw geometry overlay");
+                if ui.add(Slider::new(&mut ray_count, 0..=5).text("log10(# rays)")).changed() {
+                    main_vertex = emit_geom(&display, exp10(ray_count));
+                    scene_data.ray_count = exp10(ray_count) as f32;
+                    geom_changed = true;
+                }
+                geom_changed |= ui.add(Slider::new(&mut scene_data.brightness_scale, 0.5f32..=2.0).text("Brightness")).changed();
+                ui.checkbox(&mut run_average, "Average frames together");
+                if !run_average {
+                    geom_changed = true;
+                }
                 geom_changed |= ui.add(Slider::new(&mut scene_data.bounce_diminish, 0.0..=1.4).text("Bounce diminish")).changed();
 
                 let xrange = 0f32..=WIDTH as f32;

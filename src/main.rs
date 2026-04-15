@@ -76,7 +76,7 @@ fn main() {
     let mut run_average = true;
 
     let mut mouse_engaged = true;
-    let mut draw_geom = false;
+    let mut draw_geom = true;
 
     let mut egui = egui_glium::EguiGlium::new(&display, &window, &event_loop);
 
@@ -155,6 +155,7 @@ fn main() {
     let mut last_geom_changed = false;
 
     event_loop.run(move |event, _, control_flow| {
+
         perf.frame();
         scene_data.frame_count = perf.frames as i32;
 

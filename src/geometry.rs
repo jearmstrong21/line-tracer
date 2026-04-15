@@ -119,24 +119,19 @@ impl SceneData {
             Vertex { position: [p[0] + r * a.cos(), p[1] + r * a.sin()]}
         };
         for a in &self.arcs {
-            let ta = a.tb * 180.0 / PI;
-            let tb = a.ta * 180.0 / PI;
-            fn lerp_angle(mut ta: f32, mut tb: f32, l: f32) -> f32 {
-                if ta < tb {
-                    while ta < 0. {
-                        ta += 360.0;
-                        tb += 360.0;
-                    }
-                    (tb - ta) * l + ta
-                } else {
-                    0.0
-                }
+            let ta = a.ta;
+            let mut tb = a.tb;
+            if tb < ta {
+                tb += 360.0;
             }
+            let lerp_angle = |l: f32| -> f32 {
+                ((tb - ta) * l + ta) * PI / 180.0
+            };
             for i in 0..lod {
-                let ta = lerp_angle(ta, tb, i as f32 / lod as f32) * 180.0 / PI;
-                let tb = lerp_angle(ta, tb, (i as f32 + 1.0) / lod as f32) * 180.0 / PI;
-                vertices.push(pv(&a.p, a.r, ta));
-                vertices.push(pv(&a.p, a.r, tb));
+                let t0 = lerp_angle(i as f32 / lod as f32);
+                let t1 = lerp_angle((i as f32 + 1.0) / lod as f32);
+                vertices.push(pv(&a.p, a.r, t0));
+                vertices.push(pv(&a.p, a.r, t1));
                 indices.push(vertices.len() as u16 - 2);
                 indices.push(vertices.len() as u16 - 1);
             }
